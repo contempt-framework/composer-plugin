@@ -35,17 +35,20 @@ final class ManifestAndRecipeTest extends TestCase
         $manifest = PackageManifest::fromJson(json_encode([
             'schemaVersion' => '1.0',
             'extension' => 'Vendor\\Package\\Extension',
+            'frameworkApi' => '^1.0',
             'capabilities' => ['cache.backend', 'messaging.transport'],
             'configuration' => ['Vendor\\Package\\Configuration'],
             'recipe' => 'recipe/recipe.json',
         ], JSON_THROW_ON_ERROR));
 
         self::assertSame('Vendor\\Package\\Extension', $manifest->extension);
+        self::assertSame('^1.0', $manifest->frameworkApi);
         self::assertSame(['cache.backend', 'messaging.transport'], $manifest->capabilities);
 
         foreach ([
             ['schemaVersion' => '2.0'],
             ['schemaVersion' => '1.0', 'unknown' => true],
+            ['schemaVersion' => '1.0', 'frameworkApi' => 'not-a-constraint'],
             ['schemaVersion' => '1.0', 'capabilities' => ['same', 'same']],
             ['schemaVersion' => '1.0', 'recipe' => '../outside.json'],
         ] as $invalid) {
@@ -53,6 +56,25 @@ final class ManifestAndRecipeTest extends TestCase
                 PackageManifest::fromJson(json_encode($invalid, JSON_THROW_ON_ERROR));
                 self::fail('Invalid package manifest must fail closed.');
             } catch (\InvalidArgumentException) {
+            }
+        }
+    }
+
+    public function testOfficialPackageManifestsParseIncludingFrameworkApi(): void
+    {
+        $manifests = glob(\dirname(__DIR__, 2) . '/*/contempt.json');
+        self::assertIsArray($manifests);
+        self::assertNotSame([], $manifests);
+
+        foreach ($manifests as $path) {
+            $contents = file_get_contents($path);
+            self::assertIsString($contents, $path);
+            $manifest = PackageManifest::fromJson($contents);
+            $decoded = json_decode($contents, true, 32, JSON_THROW_ON_ERROR);
+            self::assertIsArray($decoded);
+
+            if (isset($decoded['extension'])) {
+                self::assertSame('^1.0', $manifest->frameworkApi, $path);
             }
         }
     }

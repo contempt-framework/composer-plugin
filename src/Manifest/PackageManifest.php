@@ -21,6 +21,7 @@ final readonly class PackageManifest
         array $capabilities,
         array $configuration,
         public ?string $recipe,
+        public ?string $frameworkApi,
     ) {
         $this->capabilities = $capabilities;
         $this->configuration = $configuration;
@@ -36,13 +37,19 @@ final readonly class PackageManifest
 
         $data = self::object($decoded);
 
-        $allowed = ['$schema', 'schemaVersion', 'extension', 'capabilities', 'configuration', 'recipe'];
+        $allowed = ['$schema', 'schemaVersion', 'extension', 'frameworkApi', 'capabilities', 'configuration', 'recipe'];
+        $unknown = array_values(array_diff(array_keys($data), $allowed));
 
-        if (array_diff(array_keys($data), $allowed) !== [] || ($data['schemaVersion'] ?? null) !== '1.0') {
-            throw new \InvalidArgumentException('Package manifest schema version or fields are unsupported.');
+        if ($unknown !== []) {
+            throw new \InvalidArgumentException('Package manifest fields are unsupported: ' . implode(', ', $unknown) . '.');
+        }
+
+        if (($data['schemaVersion'] ?? null) !== '1.0') {
+            throw new \InvalidArgumentException('Package manifest schema version is unsupported.');
         }
 
         $extension = self::optionalClass($data, 'extension');
+        $frameworkApi = self::optionalConstraint($data, 'frameworkApi');
         $capabilities = self::stringList($data, 'capabilities', '/^[a-z][a-z0-9_.-]{0,127}$/D');
         $configuration = self::stringList($data, 'configuration', '/^(?:[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*\\\\)*[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*$/D');
         $recipe = $data['recipe'] ?? null;
@@ -51,7 +58,29 @@ final readonly class PackageManifest
             throw new \InvalidArgumentException('Package recipe path must be safe and relative.');
         }
 
-        return new self($extension, $capabilities, $configuration, $recipe);
+        return new self($extension, $capabilities, $configuration, $recipe, $frameworkApi);
+    }
+
+    /** @param array<string, mixed> $data */
+    private static function optionalConstraint(array $data, string $key): ?string
+    {
+        $value = $data[$key] ?? null;
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (!\is_string($value) || $value === '' || trim($value) !== $value) {
+            throw new \InvalidArgumentException('Package frameworkApi must be a Composer version constraint.');
+        }
+
+        try {
+            new \Composer\Semver\VersionParser()->parseConstraints($value);
+        } catch (\UnexpectedValueException $failure) {
+            throw new \InvalidArgumentException('Package frameworkApi must be a Composer version constraint.', 0, $failure);
+        }
+
+        return $value;
     }
 
     /** @param array<string, mixed> $data */

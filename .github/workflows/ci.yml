@@ -24,6 +24,10 @@ jobs:
           ini-values: zend.assertions=1, error_reporting=-1
       - name: Validate manifest
         run: composer validate --strict --no-check-publish
+      - name: Allow sibling development versions
+        run: |
+          composer config minimum-stability dev
+          composer config prefer-stable true
       - uses: ramsey/composer-install@v3
       - name: Static analysis
         run: composer run analyse
