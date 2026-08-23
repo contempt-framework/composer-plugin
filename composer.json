@@ -1,0 +1,43 @@
+{
+    "name": "contempt/composer-plugin",
+    "description": "Composer 2 plugin: package manifest discovery, declarative recipes and contempt.lock ownership.",
+    "type": "composer-plugin",
+    "license": "MIT",
+    "homepage": "https://github.com/contempt-framework/composer-plugin",
+    "require": {
+        "composer-plugin-api": "^2.3",
+        "php": "^8.5"
+    },
+    "require-dev": {
+        "composer/composer": "^2.10",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Contempt\\Composer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Contempt\\Composer\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "class": "Contempt\\Composer\\ContemptPlugin"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --memory-limit=1G --no-progress",
+        "test": "phpunit",
+        "qa": [
+            "@analyse",
+            "@test"
+        ]
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
