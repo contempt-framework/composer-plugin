@@ -36,3 +36,14 @@ jobs:
         run: composer run test
       - name: Dependency audit
         run: composer audit --abandoned=report
+
+  backward-compatibility:
+    name: Public API compatibility
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check backward compatibility
+        uses: docker://nyholm/roave-bc-check-ga

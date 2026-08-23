@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<roave-bc-check xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <baseline>
+        <ignored-regex>#\\Internal\\#</ignored-regex>
+    </baseline>
+</roave-bc-check>
